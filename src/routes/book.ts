@@ -1,6 +1,5 @@
-export{};
-const express = require('express');
-const router = express.Router();
+import express from 'express'
+const router: express.Router =express.Router();
 const{
     BookAdd,
     BookSearch

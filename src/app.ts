@@ -6,12 +6,17 @@ hello('OGA')
 const PORT = process.env.PORT || 3000;
 const DB_LOCAL_URL = process.env.DB_LOCAL_URL || 'mongodb://localhost:27017/testapi';
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-const app = express();
-const jwt = require('jsonwebtoken');
-const router = express.Router();
+//const express = require('express');
+import express from 'express'
+//const app = express();
+const app: express.Express=express()
+//const router = express.Router();
+//const bodyParser = require('body-parser');
+import bodyParser from 'body-parser'
+//const mongoose = require('mongoose');
+import mongoose from 'mongoose'
+//const jwt = require('jsonwebtoken');
+
 //サバーポート情報
 app.listen(PORT, () => { console.log(`Listning port ${PORT}`) });
 // MongoDBの接続情報
@@ -33,7 +38,6 @@ app.use(bodyParser.json());
 const tokencheck = require('./middleware/token');//トークン認証
 const err =require('./middleware/err');//エラー受け取り
 //ルーティング
-
 const public_ = require('./routes/public');//認証なし
 const private_ = require('./routes/private');//認証有り
 const book = require('./routes/book');

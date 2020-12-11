@@ -1,6 +1,8 @@
-//const mongoose=require('mongoose');
+const mongoose=require('mongoose');
 require('dotenv').config();
-const User=require('../model/user_model')
+import jwt from 'jsonwebtoken'
+const tokens =require('../model/token_model')
+const user = require('../model/user_model')
 //const Token=require('../model/token_model')
 //const jwt = require('jsonwebtoken');
 //const get=require('../middleware/token')
@@ -9,61 +11,69 @@ exports.Signup=async (req: any, res: any,next: any) => {
     const {
         email,
         password
-    } = req.body;
-    await User.create({
-            email,
-            password
-    },function(err: any){
-        if (err) return next(err);
-    });
-    res.status(200).json({
-        success:true,
-        toke:""
-    });
-};
+    } = req.body
+    const users =await user.user_create(email,password)
+    if(user!=true){
+        return next(users)
+    }else{
+        res.status(200).json({
+            success:true,
+        })
+    }
+}
 //ログイン処理
 exports.Login=async(req: any,res: any,next: any)=>{
+    console.log("はじめ")
     const {
         email,
         password
-    } = req.body;
-    await User.find({
-        email:email,
-        password:password
-    },function(err: any,data: any){
-        if(err) return next(err);
-        if(!data[0]) return next(new Error("ユーザーが見つからない"));
+    } = req.body
+    console.log("呼出し前")
+    const users =await user.user_find(email,password)//同期したいのに同期しない
+    console.log("呼出し後")
+    console.log(users)
+    if(users[0]===false){
+        return next(users[1])
+    }else{
         const payload = {//中に入れるデータ
-            id: data[0]._id,
+            id: users[1][0]._id,
         };
-        const options = {expiresIn: "5m"};//有効時間
-        const token = jwt.sign(payload,process.env.JwtSecret,options);
-        Token.updateOne({email:email},{token:token},{upsert: true},function(err: any,data: any) {
-            if(err) return next(err);
+        const options = {expiresIn: "5m"}//有効時間
+        const env:string=process.env["JwtSecret"]!
+        const token = jwt.sign(payload,env,options)
+        //ここにトークンを更新する関数を入れる
+        const token_updete=await tokens.tokenupdated(email,token)
+        if (true!=token_updete){
+            return next(token_updete)
+        }else{
             res.status(200).json({
-                success: true,
-                token: token
-            });
-        });
-    });
-};
+                success:true,
+                token:token
+            })
+        }
+    }
+}
 //パスワード変更
 exports.UpdatePassword=async (req: any,res: any,next: any) => {
-    const id=mongoose.Types.ObjectId(res.locals.id);
-    User.updateOne({_id:id},{password:req.body.password},function(err: any){
-        if(err) return next(err);
+    const id=mongoose.Types.ObjectId(res.locals.id)
+    const users =user.user_updete(req.body.email,req.body.password)
+    if (users!=true){
+        return next(users)
+    }else{
         res.status(200).json({
             success:true
-        });
-    });
+        })
+    }
 }
-//ログアウト処理
+//ログアウト処理 tokendeleted
 exports.Logout=async(req: any,res: any,next: any)=>{
-    var token=req.headers.authorization.split(' ')[1];
-    Token.deleteOne({token:token},function(err: any){
-        if(err) return next(err);
-    });
-    res.status(200).json({
-        success:true
-    });
+    var token=req.headers.authorization.split(' ')[1]
+    const token_delete =tokens.tokendeleted(token)
+    if(true!= token_delete){
+        return next(token_delete)
+    }else{
+        res.status(200).json({
+            success:true
+        })
+    }
 }
